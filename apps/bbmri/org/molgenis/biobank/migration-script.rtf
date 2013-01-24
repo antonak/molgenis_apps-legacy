@@ -1,0 +1,104 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf360
+{\fonttbl\f0\fnil\fcharset0 Consolas;\f1\fnil\fcharset0 Tahoma;\f2\fnil\fcharset0 Monaco;
+\f3\fmodern\fcharset0 CourierNewPSMT;}
+{\colortbl;\red255\green255\blue255;\red127\green0\blue85;\red64\green0\blue200;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww12420\viewh13520\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs28 \cf0 CREATE TABLE `BiobankSubCategory` (\
+  `id` int(11) NOT NULL,\
+  PRIMARY KEY (`id`),\
+  CONSTRAINT `biobanksubcategory_ibfk_1` FOREIGN KEY (`id`) REFERENCES `OntologyTerm` (`id`) ON DELETE CASCADE\
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;\
+\
+
+\f1 /* move data from BiobankCategory to BiobankSubCategory table */\
+INSERT INTO BiobankSubCategory (id)\
+SELECT id\
+FROM BiobankCategory\
+WHERE id  NOT IN ("281", "284", "285") ;\
+/*WHERE name NOT IN ("A. Core Biobanks, DNA available", "B: Supporting biobanks, DNA not yet available" ,"C: Biobanken in opbouw") ;* - IF NEEDED CORRECT THE IDs/\
+\
+/* alter constraints */\
+\pard\pardeftab720\ql\qnatural
+
+\f2\fs22 \cf0 ALTER TABLE Biobank DROP FOREIGN KEY biobank_ibfk_5;\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+\cf0 ALTER TABLE BiobankSubCategory ADD FOREIGN KEY (id) REFERENCES OntologyTerm (id) ON DELETE CASCADE;\
+ALTER TABLE Biobank ADD FOREIGN KEY (SubCategory) REFERENCES BiobankSubCategory (id) ON DELETE RESTRICT;\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f1\fs28 \cf0 \
+\
+/* delete moved data from BiobankCategory */\
+DELETE FROM BiobankCategory\
+WHERE id  NOT IN ("281", "284", "285") ;\
+/*IF NEEDED CORRECT THE IDs\
+WHERE name IN ("A. Core Biobanks, DNA available", "B: Supporting biobanks, DNA not yet available" ,"C: Biobanken in opbouw") ;\
+*/
+\f2\fs22 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f3\fs26 \cf0 \
+\pard\pardeftab720\ql\qnatural
+
+\f2\fs22 \cf2 CREATE\cf0  \cf2 TABLE\cf0  BiobankPersonRole (\
+	id \cf3 INTEGER\cf0  \cf2 NOT\cf0  \cf3 NULL\cf0 \
+	, \cf2 PRIMARY\cf0  \cf2 KEY\cf0 (id)\
+);\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\ql\qnatural\pardirnatural
+\cf0 \
+ALTER TABLE BiobankPersonRole ADD FOREIGN KEY (id) REFERENCES PersonRole (id) ON DELETE CASCADE;
+\f3\fs26 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f1\fs28 \cf0 \
+alter table OntologyTerm modify   column __Type enum('OntologyTerm','PersonRole','Species','AlternateId','BiobankCategory','BiobankTopic','BiobankDataType', 'BiobankSubCategory','BiobankPersonRole');\
+\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='282';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='283';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='286';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='287';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='288';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='289';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='290';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='291';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='292';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='293';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='295';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='296';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='297';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='298';\
+UPDATE OntologyTerm  SET __Type="BiobankSubCategory" WHERE id='564';\
+\
+/*below we resolve the problem of duplicate entries in ontology term for PersonRole*/\
+\
+select * from OntologyTerm where name="Software Engineer";\
+delete from OntologyTerm where id=561;\
+select * from BiobankPersonRole;\
+insert into BiobankPersonRole values(561);\
+\
+select * from OntologyTerm where name="coordinator";\
+delete from OntologyTerm where id=593;\
+select * from BiobankPersonRole;\
+insert into BiobankPersonRole values(277);\
+\
+select * from OntologyTerm where name="postdoc";\
+delete from OntologyTerm where id=594;\
+ select * from BiobankPersonRole;\
+insert into BiobankPersonRole values(278);\
+\
+select * from OntologyTerm where name="administrator";\
+delete from OntologyTerm where id=595;\
+select * from BiobankPersonRole;\
+insert into BiobankPersonRole values(279);\
+\
+\
+select * from OntologyTerm where name="IT responsible";\
+delete from OntologyTerm where id=596;\
+select * from BiobankPersonRole;\
+insert into BiobankPersonRole values(280);\
+\
+ \
+COMMIT;\
+}
