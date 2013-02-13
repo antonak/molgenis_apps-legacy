@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.molgenis.auth.Institute;
 import org.molgenis.auth.MolgenisUser;
 import org.molgenis.auth.OpenIdLogin;
+import org.molgenis.auth.PersonRole;
 import org.molgenis.auth.service.MolgenisUserException;
 import org.molgenis.auth.service.MolgenisUserService;
 import org.molgenis.auth.ui.form.DatabaseAuthenticationForm;
@@ -338,9 +339,41 @@ public class SimpleUserLogin extends EasyPluginController<SimpleUserLoginModel>
 
 		MolgenisUser user = userService.findById(this.getApplicationController().getLogin().getUserId());
 		this.toMolgenisUser(request, user, db);
-		userService.update(user);
 
-		this.getModel().getMessages().add(new ScreenMessage("Changes successfully applied", true));
+		if (validateUserData(db, user))
+		{
+			userService.update(user);
+			this.getModel().getMessages().add(new ScreenMessage("Changes successfully applied", true));
+		}
+		else
+		{
+			this.getModel()
+					.getMessages()
+					.add(new ScreenMessage(
+							"The position you filled is not valid. Please contact your administrator to add this is the list.",
+							true));
+		}
+
+	}
+
+	private boolean validateUserData(Database db, MolgenisUser userData) throws DatabaseException
+	{
+		System.out.println(">>>>>>user" + userData);
+		boolean exists = false;
+		// check position. retrieve from db and check if is there
+		List<PersonRole> personRoles = db.find(PersonRole.class);
+		for (int i = 0; i < personRoles.size(); i++)
+		{
+			if (userData.getRoles_Name().equals(personRoles.get(i).getName())) exists = true;
+		}
+
+		if (!exists)
+		{
+			PersonRole pr = new PersonRole();
+			pr.setName(userData.getRoles_Name());
+			db.add(pr);
+		}
+		return exists;
 	}
 
 	public void Forgot(Database db, MolgenisRequest request)
