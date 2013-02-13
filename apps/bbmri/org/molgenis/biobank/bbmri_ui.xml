@@ -2,6 +2,7 @@
 <!-- DOCTYPE molgenis PUBLIC "MOLGENIS 1.0" "http://molgenis.sourceforge.net/dtd/molgenis_v_1_0.dtd" -->
 <molgenis name="biobank" label="Catalogue of Dutch biobanks">
 	<plugin name="BbmriHeader" type="plugins.header.BbmriHeader" />
+ 	<plugin name="FeedbackForm" type="org.molgenis.feedback.FeedbackForm" />
 	<menu name="main" position="left" startswith="WelcomeScreen">
 		<plugin name="BbmriWelcomeScreen" type="plugins.welcome.BbmriWelcomeScreenPlugin" label="Welcome" />
 		<plugin name="SimpleUserLogin" type="org.molgenis.auth.ui.SimpleUserLogin" label="Login" />
@@ -13,13 +14,13 @@
 		<menu name="Admin">
 			<menu name="DataViews">
 				<form name="AdminCohorts" entity="Biobank" label="Admin Biobank" hide_fields="id"  />
-				<form name="Coordinators" entity="Person" label="Person" view="list" sortby="LastName"  groupWrite="editor"  />
+<!-- 			<form name="Coordinators" entity="Person" label="Person" view="list" sortby="LastName"  groupWrite="editor"  />-->
 				<form name="Institutes" entity="BiobankInstitute" view="list" groupWrite="editor"   />
 				<form name="BiobankCoordinator" entity="BiobankCoordinator"	view="list"  groupWrite="editor"  />
 				<form name="Categories" sortby="name" view="list" entity="BiobankCategory" groupWrite="editor"   />
 				<form name="SubCategories" sortby="name" view="list" entity="BiobankSubCategory" groupWrite="editor"   />
 				<form name="Topics" entity="BiobankTopic" groupWrite="editor"  />
-				<form name="OntologyTerm" entity="OntologyTerm" />
+<!-- 				<form name="OntologyTerm" entity="OntologyTerm" />-->
 				<form name="BiobankDataType" entity="BiobankDataType" groupWrite="editor"  />
 				<form name="PersonRole" entity="BiobankPersonRole" label="Coordinator Roles" groupWrite="editor"  />
 				<form name="ChangeLog" entity="ChangeLog" />
