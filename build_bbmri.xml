@@ -21,6 +21,7 @@
 		<pathelement location="modules/decorators/auth" />
 		<pathelement location="modules/decorators/pheno" />
 		<pathelement location="modules/webserver" />
+		<pathelement location="modules/feedback" />
 		<!--pathelement location="modules/load" /-->
 
 	</path>
