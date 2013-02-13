@@ -53,9 +53,11 @@ public class ConvertVcfToPatho
 		}
 		else
 		{
-			vcfFile = new File(
-					"/Users/erwin/Documents/test_S0_L001_R1_001_converted_Unique_Output_MutationReport_CARDIO.vcf");
-			outputDir = new File("/Users/erwin/Documents/vcf");
+			// vcfFile = new
+			// File("/Users/despoina/Documents/_____VCFpathoData/vcf_files/test_S0_L001_R1_001_converted_Unique_Output_MutationReport_CARDIO.vcf");
+			// File("/Users/despoina/Documents/_____VCFpathoData/vcf_files/gonl.chr22.release4.2varssum.vcf");
+			vcfFile = new File("/Users/despoina/Documents/_____VCFpathoData/vcf_files/gonl.chr22.release4.sum.vcf");
+			outputDir = new File("/Users/despoina/Documents/_____VCFpathoData/output");
 		}
 
 		ConvertVcfToPatho convert = new ConvertVcfToPatho();
@@ -126,7 +128,11 @@ public class ConvertVcfToPatho
 					Variant v = new Variant();
 					ObservedValue o = new ObservedValue();
 
+					System.out.println("record:" + record);
+
 					String result = "chr" + record.getChrom() + ":g.";
+					System.out.println("result:" + result);
+
 					v.setName("chr" + record.getChrom() + ":g." + record.getPos() + record.getRef() + ">" + alt.get(i));
 					v.setName(v.getName().replace("|", "_"));
 
@@ -176,7 +182,7 @@ public class ConvertVcfToPatho
 								logger.warn("unknown key: " + key);
 
 						}
-						// o.setValue(record.getInfo("AC").get(i));
+						o.setValue(record.getInfo("AC").get(i));
 					}
 					// TODO: fetch panel and relation from VCF if possible...
 					// and create it first, so we can use it here.
