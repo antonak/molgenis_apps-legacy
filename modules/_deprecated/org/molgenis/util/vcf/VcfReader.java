@@ -19,8 +19,14 @@ public class VcfReader
 {
 	private CsvReader reader;
 	private List<String> fileHeaders = new ArrayList<String>();
+	private boolean isFormatAvailable = false;
+	// This is safe to remove FORMAT because it will be added in getSampleList()
+	// private static List<String> normalHeaders = Arrays.asList(new String[]
+	// { "#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO",
+	// "FORMAT", "" });
+
 	private static List<String> normalHeaders = Arrays.asList(new String[]
-	{ "#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", "" });
+	{ "#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "" });
 
 	private static List<String> Infofields = new ArrayList<String>();
 
@@ -34,6 +40,7 @@ public class VcfReader
 		{
 			String strLine;
 			// Read File Line By Line
+
 			while ((strLine = br.readLine()) != null)
 			{
 				if (strLine.startsWith("##"))
@@ -47,6 +54,10 @@ public class VcfReader
 						System.out.println(tmp[0]);
 
 						if (!Infofields.contains(tmp[0])) Infofields.add(tmp[0]);
+					}
+					if (strLine.startsWith("#CHROM"))
+					{
+						System.out.println("LINE :  " + br.readLine());
 					}
 				}
 				else
@@ -83,6 +94,10 @@ public class VcfReader
 			{
 				VcfFormat info = new VcfFormat(this.parseHeader(header));
 				result.add(info);
+			}
+			else
+			{
+				System.out.println("no format");
 			}
 		}
 		return result;

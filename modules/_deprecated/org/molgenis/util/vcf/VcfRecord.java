@@ -71,6 +71,7 @@ public class VcfRecord
 		{
 			this.infoMap = new LinkedHashMap<String, List<String>>();
 
+			System.out.println("INFO : " + this.getInfo());
 			String[] keyvalues = this.getInfo().split(";");
 			for (String keyvalue : keyvalues)
 			{
@@ -84,9 +85,12 @@ public class VcfRecord
 		return this.infoMap.get(key);
 	}
 
+	@SuppressWarnings("deprecation")
 	public List<String> getFormat()
 	{
-		return Arrays.asList(record.getString("FORMAT").split(":"));
+		if (record.getString("FORMAT") == null) return null;
+		else
+			return Arrays.asList(record.getString("FORMAT").split(":"));
 	}
 
 	public List<String> getSamples()
@@ -97,6 +101,7 @@ public class VcfRecord
 	public String getSampleValue(String sample, String key)
 	{
 		// first get the position from the key
+		// check if there is format
 		int index = getFormat().indexOf(key);
 
 		// then get the sample from the tuple
