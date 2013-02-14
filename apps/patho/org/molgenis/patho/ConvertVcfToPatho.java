@@ -127,6 +127,8 @@ public class ConvertVcfToPatho
 				{
 					Variant v = new Variant();
 					ObservedValue o = new ObservedValue();
+					List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
+					// //TODO o needs to be a list
 
 					System.out.println("record:" + record);
 
@@ -182,7 +184,30 @@ public class ConvertVcfToPatho
 								logger.warn("unknown key: " + key);
 
 						}
+						ObservedValue ac = new ObservedValue();
+						ac.setFeature_Name("AC");
+						ac.setValue(record.getInfo("AC").get(i));
+
+						ObservedValue an = new ObservedValue();
+						an.setFeature_Name("AN");
+						an.setValue(record.getInfo("AN").get(i));
+
+						ObservedValue gtc = new ObservedValue();
+						gtc.setFeature_Name("GTC");
+						// gtc.setValue(record.getInfo("GTC").get(i));
+
+						observedValuesList.add(ac);
+						observedValuesList.add(an);
+						observedValuesList.add(gtc);
+
 						o.setValue(record.getInfo("AC").get(i));
+						o.setValue(record.getInfo("AN").get(i));
+						// GTC is not only one number
+						String tmp = "";
+						for (int k = 0; k != record.getInfo("GTC").size(); k++)
+							tmp = tmp + record.getInfo("GTC").get(k) + " , ";
+						o.setValue(tmp);
+
 					}
 					// TODO: fetch panel and relation from VCF if possible...
 					// and create it first, so we can use it here.
@@ -214,10 +239,26 @@ public class ConvertVcfToPatho
 						o.setFeature_Name(v.getName());
 
 						o.setValue(record.getSampleValue(patientName, "GT"));
+
+					}
+
+					System.out.println("**********" + observedValuesList);
+
+					for (ObservedValue ov : observedValuesList)
+					{
+						// ov.setRelation_Name("Allele count");
+
+						values.add(ov);
+						// System.out.println("**********" + ov +
+						// "Adding values to Observed value: " + values);
+
 					}
 
 					variants.add(v);
+					System.out.println("Observed value: " + o);
 					values.add(o);
+					System.out.println("Adding values to Observed value: " + values);
+
 				}
 
 				if (variants.size() >= BATCH_SIZE)
