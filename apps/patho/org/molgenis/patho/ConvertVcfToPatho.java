@@ -100,11 +100,22 @@ public class ConvertVcfToPatho
 
 		// create file headers
 		final String[] variantHeaders = new String[]
-		{ Variant.NAME, Variant.CHROMOSOME_NAME, Variant.STARTGDNA, Variant.ENDGDNA, Variant.RESIDUES,
-				Variant.ALTRESIDUES, Variant.DESCRIPTION, Variant.ALTERNATEID_NAME };
+		// { Variant.NAME, Variant.CHROMOSOME_NAME, Variant.STARTGDNA,
+		// Variant.ENDGDNA, Variant.RESIDUES,
+		// Variant.ALTRESIDUES, Variant.DESCRIPTION, Variant.ALTERNATEID_NAME };
+		{ Variant.ID, Variant.NAME, Variant.DESCRIPTION, Variant.INVESTIGATION_NAME, Variant.ONTOLOGYREFERENCE_NAME,
+				Variant.ALTERNATEID_NAME, Variant.LABEL, Variant.FEATURETYPE_NAME, Variant.SPECIES_NAME,
+				Variant.RESIDUES, Variant.SEQLEN, Variant.TYPE_, Variant.ALTRESIDUES, Variant.NAMECDNA,
+				Variant.STARTCDNA, Variant.ENDCDNA, Variant.ENDGDNA, Variant.NAMEAA, Variant.EXON_NAME,
+				Variant.GENE_NAME, Variant.CHROMOSOME_NAME };
 
 		final String[] ovHeaders = new String[]
-		{ ObservedValue.TARGET_NAME, ObservedValue.RELATION_NAME, ObservedValue.FEATURE_NAME, ObservedValue.VALUE };
+		{ ObservedValue.ID, ObservedValue.INVESTIGATION_NAME, ObservedValue.PROTOCOLAPPLICATION_NAME,
+				ObservedValue.FEATURE_NAME, ObservedValue.TARGET_NAME, ObservedValue.ONTOLOGYREFERENCE_NAME,
+				ObservedValue.VALUE, ObservedValue.CHARACTERISTICVALUE_NAME, ObservedValue.CHARACTERISTICVALUE_NAME,
+				ObservedValue.RELATION_NAME, ObservedValue.TIME, ObservedValue.ENDTIME };
+		// { ObservedValue.TARGET_NAME, ObservedValue.RELATION_NAME,
+		// ObservedValue.FEATURE_NAME, ObservedValue.VALUE };
 
 		// create files
 		createFileAndHeader(fileVariants, variantHeaders);
@@ -184,15 +195,32 @@ public class ConvertVcfToPatho
 								logger.warn("unknown key: " + key);
 
 						}
+
+						// create 3 features : AC, AN, GTC
+						ObservableFeature acf = new ObservableFeature();
+						acf.setName("AC");
+						features.add(acf);
+
+						ObservableFeature anf = new ObservableFeature();
+						acf.setName("AN");
+						features.add(anf);
+
+						ObservableFeature gtcf = new ObservableFeature();
+						acf.setName("GTC");
+						features.add(gtcf);
+
 						ObservedValue ac = new ObservedValue();
+						ac.setFeature(acf);
 						ac.setFeature_Name("AC");
 						ac.setValue(record.getInfo("AC").get(i));
 
 						ObservedValue an = new ObservedValue();
+						ac.setFeature(anf);
 						an.setFeature_Name("AN");
 						an.setValue(record.getInfo("AN").get(i));
 
 						ObservedValue gtc = new ObservedValue();
+						ac.setFeature(gtcf);
 						gtc.setFeature_Name("GTC");
 						// gtc.setValue(record.getInfo("GTC").get(i));
 
@@ -246,8 +274,7 @@ public class ConvertVcfToPatho
 
 					for (ObservedValue ov : observedValuesList)
 					{
-						// ov.setRelation_Name("Allele count");
-
+						// if (!values.contains(ov))
 						values.add(ov);
 						// System.out.println("**********" + ov +
 						// "Adding values to Observed value: " + values);
@@ -330,13 +357,20 @@ public class ConvertVcfToPatho
 
 		File chrFile = new File(targetDir, "Chromosome.txt");
 		String[] chrHeader = new String[]
-		{ Chromosome.NAME, Chromosome.GENOMEBUILD_NAME, Chromosome.ORDERNR, Chromosome.ISAUTOSOMAL };
+		{ Chromosome.ID, Chromosome.NAME, Chromosome.DESCRIPTION, Chromosome.INVESTIGATION_NAME,
+				Chromosome.ONTOLOGYREFERENCE_NAME, Chromosome.ALTERNATEID_NAME, Chromosome.LABEL,
+				Chromosome.FEATURETYPE_NAME, Chromosome.SPECIES_NAME, Chromosome.RESIDUES, Chromosome.SEQLEN,
+				Chromosome.ORDERNR, Chromosome.ISAUTOSOMAL, Chromosome.BPLENGTH, Chromosome.GENOMEBUILD_NAME };
+		// { Chromosome.NAME, Chromosome.GENOMEBUILD_NAME, Chromosome.ORDERNR,
+		// Chromosome.ISAUTOSOMAL };
 		createFileAndHeader(chrFile, chrHeader);
 		writeBatch(chrList, chrFile, chrHeader);
 
 		File ontoFile = new File(outputDir.getAbsolutePath() + File.separatorChar + "OntologyTerm.txt");
 		String[] ontoHeader = new String[]
-		{ "name" };
+		{ "id", "name", "ontology_name", "termAccession", "definition", "termPath" };// {
+																						// "name"
+																						// };
 		createFileAndHeader(ontoFile, ontoHeader);
 		writeBatch(ontoList, ontoFile, ontoHeader);
 
@@ -347,7 +381,9 @@ public class ConvertVcfToPatho
 
 		final File buildsFile = new File(targetDir, "GenomeBuild.txt");
 		String[] buildsHeader = new String[]
-		{ "name", "species_name" };
+		{ "id", "name", "description", "Investigation_name", "ontologyReference_name", "AlternateId_name", "label",
+				"featureType_name", "species_name", "residues", "seqlen" };
+		// { "name", "species_name" };
 		createFileAndHeader(buildsFile, buildsHeader);
 		writeBatch(builds, buildsFile, buildsHeader);
 
@@ -369,13 +405,16 @@ public class ConvertVcfToPatho
 
 		final File featureFile = new File(outputDir.getAbsolutePath() + File.separatorChar + "ObservableFeature.txt");
 		String[] featureHeader = new String[]
-		{ "name" };
+		{ "id", "name", "description", "Investigation_name", "ontologyReference_name", "AlternateId_name", "chars_name" };// {
+																															// "name"
+																															// };
 		createFileAndHeader(featureFile, featureHeader);
 		writeBatch(features, featureFile, featureHeader);
 
 		final File speciesFile = new File(targetDir, "Species.txt");
 		String[] speciesHeader = new String[]
-		{ "name" };
+		{ "id", "name", "ontology_name", "termAccession", "definition", "termPath" };
+		// { "name" };
 		createFileAndHeader(speciesFile, speciesHeader);
 		writeBatch(species, speciesFile, speciesHeader);
 
