@@ -3,21 +3,18 @@ package org.molgenis.gonl.utils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.molgenis.core.OntologyTerm;
-import org.molgenis.pheno.Individual;
 import org.molgenis.pheno.ObservableFeature;
 import org.molgenis.pheno.ObservedValue;
 import org.molgenis.pheno.Panel;
@@ -25,8 +22,6 @@ import org.molgenis.pheno.Species;
 import org.molgenis.util.CsvFileWriter;
 import org.molgenis.util.CsvWriter;
 import org.molgenis.util.Entity;
-import org.molgenis.util.tuple.KeyValueTuple;
-import org.molgenis.util.tuple.WritableTuple;
 import org.molgenis.util.vcf.VcfReader;
 import org.molgenis.util.vcf.VcfReaderListener;
 import org.molgenis.util.vcf.VcfRecord;
@@ -51,6 +46,8 @@ public class VcfToGoNLVariantConverter
 
 		if (args.length != 4)
 		{
+			// /Users/despoina/Documents/_____VCFpathoData/vcf_files/gonl.chr22.release4.sum.vcf
+			// /Users/despoina/Documents/_____VCFpathoData/output/ test test
 			System.err.println("Usage: <input.vcf> <output.dir> <panel_name> <encryption_salt>");
 			return;
 		}
@@ -88,12 +85,16 @@ public class VcfToGoNLVariantConverter
 		System.out.println("converting aggregate data from vcf=" + vcfFile + " to directory " + outputDir);
 		final VcfReader vcf = new VcfReader(vcfFile);
 
+		SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy");
+		String date = sdf.format(new Date());
+
+		// final List<Variant> variants = new ArrayList<Variant>();
 		final List<SequenceVariant> variants = new ArrayList<SequenceVariant>();
 		final List<ObservedValue> values = new ArrayList<ObservedValue>();
 		final List<String> chromosomes = new ArrayList<String>();
+		final List<String> dbXrefs = new ArrayList<String>();
 		final List<GenomeBuild> builds = new ArrayList<GenomeBuild>();
 		final List<Species> species = new ArrayList<Species>();
-		final Map<String, Individual> individuals = new TreeMap<String, Individual>();
 		final List<ObservableFeature> features = new ArrayList<ObservableFeature>();
 		final Panel panel = new Panel();
 
@@ -105,16 +106,20 @@ public class VcfToGoNLVariantConverter
 
 		// create file headers
 		final String[] variantHeaders = new String[]
-		{ SequenceVariant.NAME, SequenceVariant.REF, SequenceVariant.ALT, SequenceVariant.CHR_NAME,
-				SequenceVariant.STARTBP, SequenceVariant.ENDBP, SequenceVariant.DESCRIPTION,
-				SequenceVariant.ALTERNATEID_NAME };
+		{ SequenceVariant.ID, SequenceVariant.NAME, SequenceVariant.DESCRIPTION, SequenceVariant.INVESTIGATION_NAME,
+				SequenceVariant.ONTOLOGYREFERENCE_NAME, SequenceVariant.ALTERNATEID_NAME, SequenceVariant.__TYPE,
+				SequenceVariant.ALT, SequenceVariant.CHR, SequenceVariant.CHR_NAME, SequenceVariant.DBREFS,
+				SequenceVariant.DBREFS_NAME, SequenceVariant.ENDBP, SequenceVariant.ENDBP, SequenceVariant.REF,
+				SequenceVariant.STARTBP, SequenceVariant.VARIANTTYPE };
 
 		final String[] ovHeaders = new String[]
-		{ ObservedValue.TARGET_NAME, ObservedValue.RELATION_NAME, ObservedValue.FEATURE_NAME, ObservedValue.VALUE };
-
+		{ ObservedValue.ID, ObservedValue.INVESTIGATION_NAME, ObservedValue.PROTOCOLAPPLICATION_NAME,
+				ObservedValue.FEATURE_NAME, ObservedValue.TARGET_NAME, ObservedValue.ONTOLOGYREFERENCE_NAME,
+				ObservedValue.VALUE, ObservedValue.CHARACTERISTICVALUE_NAME, ObservedValue.CHARACTERISTICVALUE_NAME,
+				ObservedValue.RELATION_NAME, ObservedValue.TIME, ObservedValue.ENDTIME };
 		// create files
-		createFileAndHeader(fileVariants, variantHeaders);
-		createFileAndHeader(fileObservedValues, ovHeaders);
+		// createFileAndHeader(fileVariants, variantHeaders);
+		// createFileAndHeader(fileObservedValues, ovHeaders);
 
 		final List<Integer> count = new ArrayList<Integer>();
 		count.add(0);
@@ -134,9 +139,16 @@ public class VcfToGoNLVariantConverter
 				{
 					SequenceVariant v = new SequenceVariant();
 					ObservedValue observedValue = new ObservedValue();
+					List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
 
 					// TODO result is not used, do we need this?
 					// String result = "chr" + record.getChrom() + ":g.";
+
+//#CHROM 	POS		ID			REF	ALT			QUAL	FILTER									INFO	
+//22	 	12345	.			A	T			2000	TruthSensitivityTranche99.60to99.70		AC=3;AN=10;GTC=3,1,1	
+//22		12346	rs0987654	A	G,C			2000	TruthSensitivityTranche99.60to99.70		AC=1,4;AN=10;GTC=2,0,0,1,1,1	
+//22		12347	rs0987654	A	G,C,TGCCAAT	2000	TruthSensitivityTranche99.60to99.70		AC=1,6,3;AN=20;GTC=4,0,0,2,1,1,0,0,1,1
+
 					v.setName("chr" + record.getChrom() + ":g." + record.getPos() + record.getRef() + ">" + alt.get(i));
 					v.setName(v.getName().replace("|", "_"));
 
@@ -145,6 +157,14 @@ public class VcfToGoNLVariantConverter
 
 					// alt
 					v.setAlt(alt.get(i));
+
+					// ref TODO : check this is used in Variant, do we need to
+					// set something in SequeceVariant?
+					// v.setResidues(record.getRef());
+
+					// alt TODO : check this is used in Variant, do we need to
+					// set something in SequeceVariant?
+					// v.setAltResidues(alt.get(i));
 
 					// chr
 					String chromName = record.getChrom().replace("|", "_");
@@ -157,6 +177,12 @@ public class VcfToGoNLVariantConverter
 					// pos
 					v.setStartBP(record.getPos());
 					v.setEndBP(record.getPos());
+
+					// pos TODO : pick one of these two, Pieter?
+					// TODO : check this is used in Variant, do we need to set
+					// something in SequeceVariant?
+					// v.setStartGdna(record.getPos());
+					// v.setEndGdna(record.getPos());
 
 					v.setDescription("" + record.getId());
 
@@ -172,38 +198,71 @@ public class VcfToGoNLVariantConverter
 							String key = var3.get(j);
 							List<String> info = record.getInfo(key);
 							if (info == null | info.isEmpty()) observedValue.setValue(info.get(0));
+
 							else
 								logger.warn("unknown key: " + key);
 
 						}
-					}
 
-					for (String individualName : vcf.getSampleList())
-					{
-						// encrypt individual name
-						String encIndividualName = encrypt(individualName, encryptionSalt);
+//##INFO=<ID=GTC,Number=G,Type=Integer,Description="GenoType Counts. For each ALT allele in the same order as listed = 0/0,0/1,1/1,0/2,1/2,2/2,0/3,1/3,2/3,3/3,etc. 
+//Phasing is ignored; hence 1/0, 0|1 and 1|0 are all counted as 0/1. When one or more alleles is not called for a genotype in a specific sample (./., ./0, ./1, ./2, etc.),
+//that sample's genotype is completely discarded for calculating GTC.">
 
-						encIndividualMap.put(individualName, encIndividualName);
+						
+						// create 3 features : AC, AN, GTC
+						ObservableFeature acf = new ObservableFeature();
+						acf.setName("AC");
+						features.add(acf);
 
-						// create individual
-						Individual individual = individuals.get(encIndividualName);
-						if (individual == null)
-						{
-							individual = new Individual();
-							individual.setName(encIndividualName);
-							individuals.put(encIndividualName, individual);
-						}
+						ObservableFeature anf = new ObservableFeature();
+						acf.setName("AN");
+						features.add(anf);
 
-						// create genotype for patient-mutation
-						observedValue.setTarget_Name(panelName);
-						observedValue.setRelation_Name("Allele count");
-						observedValue.setFeature_Name(v.getName());
+						ObservableFeature gtcf = new ObservableFeature();
+						acf.setName("GTC");
+						features.add(gtcf);
 
-						observedValue.setValue(record.getSampleValue(individualName, "GT"));
+						ObservedValue ac = new ObservedValue();
+						ac.setFeature(acf);
+						ac.setFeature_Name("AC");
+						ac.setValue(record.getInfo("AC").get(i));
+
+						ObservedValue an = new ObservedValue();
+						ac.setFeature(anf);
+						an.setFeature_Name("AN");
+						an.setValue(record.getInfo("AN").get(i));
+
+						ObservedValue gtc = new ObservedValue();
+						ac.setFeature(gtcf);
+						gtc.setFeature_Name("GTC");
+						// gtc.setValue(record.getInfo("GTC").get(i));
+
+						observedValuesList.add(ac);
+						observedValuesList.add(an);
+						observedValuesList.add(gtc);
+
+						observedValue.setValue(record.getInfo("AC").get(i));
+						observedValue.setValue(record.getInfo("AN").get(i));
+						// GTC is not only one number
+						String tmp = "";
+						for (int k = 0; k != record.getInfo("GTC").size(); k++)
+							tmp = tmp + record.getInfo("GTC").get(k) + " , ";
+						observedValue.setValue(tmp);
+
 					}
 
 					variants.add(v);
 					values.add(observedValue);
+
+					observedValue.setRelation_Name("Allele count");
+					observedValue.setFeature_Name(v.getName());
+
+				}
+				List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
+
+				for (ObservedValue ov : observedValuesList)
+				{
+					values.add(ov);
 				}
 
 				if (variants.size() >= BATCH_SIZE)
@@ -220,9 +279,6 @@ public class VcfToGoNLVariantConverter
 			}
 		});
 
-		// write individual encryption information
-		writeEncryptedIndividuals(outputDir, encIndividualMap);
-
 		// write remaining data for last batch.
 		writeBatch(variants, fileVariants, variantHeaders);
 		writeBatch(values, fileObservedValues, ovHeaders);
@@ -236,18 +292,26 @@ public class VcfToGoNLVariantConverter
 			c.setName(chr);
 			c.setGenomeBuild_Name("hg19");
 			c.setOrderNr(++order);
-
+			// this was in GONL before merge
+			// if (chr.matches("[a-zA-Z]+"))
+			// {
+			// c.setIsAutosomal(false);
+			// }
 			if (chr.matches("[a-zA-Z]+"))
 			{
-				c.setIsAutosomal(false);
+				c.setIsAutosomal("no");
 			}
+			// else if (chr.matches("^CH?R?"))
+			// {
+			// c.setIsAutosomal("no");
+			// }
 			else if (chr.startsWith("UN"))
 			{
-				c.setIsAutosomal(null);
+				c.setIsAutosomal("unknown");
 			}
 			else
 			{
-				c.setIsAutosomal(true);
+				c.setIsAutosomal("yes");
 			}
 
 			chrList.add(c);
@@ -264,14 +328,21 @@ public class VcfToGoNLVariantConverter
 		File chrFile = new File(outputDir.getAbsolutePath() + File.separatorChar + Chromosome.class.getSimpleName()
 				+ ".txt");
 		String[] chrHeader = new String[]
-		{ Chromosome.NAME, Chromosome.GENOMEBUILD_NAME, Chromosome.ORDERNR, Chromosome.ISAUTOSOMAL };
+		// in GONL before merge { Chromosome.NAME, Chromosome.GENOMEBUILD_NAME,
+		// Chromosome.ORDERNR, Chromosome.ISAUTOSOMAL };
+		{ Chromosome.ID, Chromosome.NAME, Chromosome.DESCRIPTION, Chromosome.INVESTIGATION_NAME,
+				Chromosome.ONTOLOGYREFERENCE_NAME, Chromosome.ALTERNATEID_NAME, Chromosome.BPLENGTH,
+				Chromosome.GENOMEBUILD, Chromosome.ORDERNR, Chromosome.ISAUTOSOMAL, Chromosome.BPLENGTH,
+				Chromosome.GENOMEBUILD_NAME };
+		// {
 		createFileAndHeader(chrFile, chrHeader);
 		writeBatch(chrList, chrFile, chrHeader);
 
 		File ontoFile = new File(outputDir.getAbsolutePath() + File.separatorChar + OntologyTerm.class.getSimpleName()
 				+ ".txt");
 		String[] ontoHeader = new String[]
-		{ "name" };
+		// GONL before merger { "name" };
+		{ "id", "name", "ontology_name", "termAccession", "definition", "termPath" };
 		createFileAndHeader(ontoFile, ontoHeader);
 		writeBatch(ontoList, ontoFile, ontoHeader);
 
@@ -282,27 +353,22 @@ public class VcfToGoNLVariantConverter
 
 		final File buildsFile = new File(outputDir.getAbsolutePath() + File.separatorChar
 				+ GenomeBuild.class.getSimpleName() + ".txt");
+		// final File buildsFile = new File(targetDir, "GenomeBuild.txt");
+
 		String[] buildsHeader = new String[]
 		{ "name", "species_name" };
 		createFileAndHeader(buildsFile, buildsHeader);
 		writeBatch(builds, buildsFile, buildsHeader);
 
 		panel.setName(this.panelName);
-		panel.setIndividuals(new ArrayList<Individual>(individuals.values()));
 
-		final File panelFile = new File(outputDir.getAbsolutePath() + File.separatorChar + Panel.class.getSimpleName()
-				+ ".txt");
-		String[] panelHeader = new String[]
-		{ "name", "individuals_name" };
-		createFileAndHeader(panelFile, panelHeader);
-		writeBatch(Collections.singletonList(panel), panelFile, panelHeader);
-
-		final File individualFile = new File(outputDir.getAbsolutePath() + File.separatorChar
-				+ Individual.class.getSimpleName() + ".txt");
-		String[] patientHeader = new String[]
-		{ "name", "phenotype", "submission_identifier", "mutations_name" };
-		createFileAndHeader(individualFile, patientHeader);
-		writeBatch(new ArrayList<Individual>(individuals.values()), individualFile, patientHeader);
+		// final File panelFile = new File(outputDir.getAbsolutePath() +
+		// File.separatorChar + Panel.class.getSimpleName()
+		// + ".txt");
+		// String[] panelHeader = new String[]
+		// { "name", "individuals_name" };
+		// createFileAndHeader(panelFile, panelHeader);
+		// writeBatch(Collections.singletonList(panel), panelFile, panelHeader);
 
 		ObservableFeature f = new ObservableFeature();
 		f.setName("Allele count");
@@ -318,7 +384,8 @@ public class VcfToGoNLVariantConverter
 		final File speciesFile = new File(outputDir.getAbsolutePath() + File.separatorChar
 				+ Species.class.getSimpleName() + ".txt");
 		String[] speciesHeader = new String[]
-		{ "name" };
+		{ "id", "name", "ontology_name", "termAccession", "definition", "termPath" };
+		// final File speciesFile = new File(targetDir, "Species.txt");
 		createFileAndHeader(speciesFile, speciesHeader);
 		writeBatch(species, speciesFile, speciesHeader);
 
@@ -327,30 +394,6 @@ public class VcfToGoNLVariantConverter
 	private String encrypt(String value, String salt)
 	{
 		return DigestUtils.md5Hex(value + salt);
-	}
-
-	private void writeEncryptedIndividuals(File outputDir, Map<String, String> encIndividualMap) throws IOException
-	{
-		String colIndividualName = "individual_name";
-		String colIndividualNameMD5Salted = "individual_name_md5_salted";
-
-		File patientFile = new File(outputDir.getAbsolutePath() + File.separatorChar + "encrypted_individuals.csv");
-		org.molgenis.io.csv.CsvWriter csvWriter = new org.molgenis.io.csv.CsvWriter(patientFile);
-		try
-		{
-			csvWriter.writeColNames(Arrays.asList(colIndividualName, colIndividualNameMD5Salted));
-			for (Entry<String, String> entry : encIndividualMap.entrySet())
-			{
-				WritableTuple tuple = new KeyValueTuple();
-				tuple.set(colIndividualName, entry.getKey());
-				tuple.set(colIndividualNameMD5Salted, entry.getValue());
-				csvWriter.write(tuple);
-			}
-		}
-		finally
-		{
-			csvWriter.close();
-		}
 	}
 
 	private void createFileAndHeader(File file, String[] fields) throws IOException
