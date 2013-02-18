@@ -54,6 +54,9 @@
 			<!-- form name="GonlSubmission" label="Submissions" entity="Submission" 
 				/ -->
 			<form name="GonlObservation" label="Observed Values" entity="ObservedValue" />
+			<form name="GonlObservationElement" label="Observation Element" entity="ObservationElement" />
+			<form name="GonlObservableFeature" label="Observable Feature" entity="ObservableFeature" />
+			<form name="GonlObservationTarget" label="Observation Target" entity="ObservationTarget" />
 			<plugin name="GonlLoadFromDir" label="DirectoryImport"
 				type="org.molgenis.load.ui.LoadFromDirectory" />
 		</menu>
