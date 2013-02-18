@@ -16,6 +16,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.molgenis.core.OntologyTerm;
 import org.molgenis.pheno.ObservableFeature;
+import org.molgenis.pheno.ObservationTarget;
 import org.molgenis.pheno.ObservedValue;
 import org.molgenis.pheno.Panel;
 import org.molgenis.pheno.Species;
@@ -39,7 +40,7 @@ public class VcfToGoNLVariantConverter
 {
 	private static final Logger logger = Logger.getLogger(VcfToGoNLVariantConverter.class);
 
-	public static final int BATCH_SIZE = 100000;
+	public static final int BATCH_SIZE = 22; // what??????
 
 	public static void main(String[] args) throws Exception
 	{
@@ -91,6 +92,7 @@ public class VcfToGoNLVariantConverter
 		// final List<Variant> variants = new ArrayList<Variant>();
 		final List<SequenceVariant> variants = new ArrayList<SequenceVariant>();
 		final List<ObservedValue> values = new ArrayList<ObservedValue>();
+		final List<ObservationTarget> targets = new ArrayList<ObservationTarget>();
 		final List<String> chromosomes = new ArrayList<String>();
 		final List<String> dbXrefs = new ArrayList<String>();
 		final List<GenomeBuild> builds = new ArrayList<GenomeBuild>();
@@ -103,6 +105,8 @@ public class VcfToGoNLVariantConverter
 				+ SequenceVariant.class.getSimpleName() + ".txt");
 		final File fileObservedValues = new File(outputDir.getAbsolutePath() + File.separatorChar
 				+ ObservedValue.class.getSimpleName() + ".txt");
+		final File fileObservedTargets = new File(outputDir.getAbsolutePath() + File.separatorChar
+				+ ObservationTarget.class.getSimpleName() + ".txt");
 
 		// create file headers
 		final String[] variantHeaders = new String[]
@@ -117,9 +121,14 @@ public class VcfToGoNLVariantConverter
 				ObservedValue.FEATURE_NAME, ObservedValue.TARGET_NAME, ObservedValue.ONTOLOGYREFERENCE_NAME,
 				ObservedValue.VALUE, ObservedValue.CHARACTERISTICVALUE_NAME, ObservedValue.CHARACTERISTICVALUE_NAME,
 				ObservedValue.RELATION_NAME, ObservedValue.TIME, ObservedValue.ENDTIME };
+
+		final String[] otHeaders = new String[]
+		{ ObservationTarget.ID, ObservationTarget.NAME };
+
 		// create files
-		// createFileAndHeader(fileVariants, variantHeaders);
-		// createFileAndHeader(fileObservedValues, ovHeaders);
+		createFileAndHeader(fileVariants, variantHeaders);
+		createFileAndHeader(fileObservedValues, ovHeaders);
+		createFileAndHeader(fileObservedTargets, otHeaders);
 
 		final List<Integer> count = new ArrayList<Integer>();
 		count.add(0);
@@ -134,20 +143,27 @@ public class VcfToGoNLVariantConverter
 				// create hgvs notation, one record per variant reported (even
 				// if they
 				// are on same location)
+				List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
+				ObservationTarget t = new ObservationTarget();
+
 				List<String> alt = record.getAlt();
 				for (int i = 0; i < alt.size(); i++)
 				{
 					SequenceVariant v = new SequenceVariant();
 					ObservedValue observedValue = new ObservedValue();
-					List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
 
 					// TODO result is not used, do we need this?
 					// String result = "chr" + record.getChrom() + ":g.";
 
-//#CHROM 	POS		ID			REF	ALT			QUAL	FILTER									INFO	
-//22	 	12345	.			A	T			2000	TruthSensitivityTranche99.60to99.70		AC=3;AN=10;GTC=3,1,1	
-//22		12346	rs0987654	A	G,C			2000	TruthSensitivityTranche99.60to99.70		AC=1,4;AN=10;GTC=2,0,0,1,1,1	
-//22		12347	rs0987654	A	G,C,TGCCAAT	2000	TruthSensitivityTranche99.60to99.70		AC=1,6,3;AN=20;GTC=4,0,0,2,1,1,0,0,1,1
+					// #CHROM POS ID REF ALT QUAL FILTER INFO
+					// 22 12345 . A T 2000 TruthSensitivityTranche99.60to99.70
+					// AC=3;AN=10;GTC=3,1,1
+					// 22 12346 rs0987654 A G,C 2000
+					// TruthSensitivityTranche99.60to99.70
+					// AC=1,4;AN=10;GTC=2,0,0,1,1,1
+					// 22 12347 rs0987654 A G,C,TGCCAAT 2000
+					// TruthSensitivityTranche99.60to99.70
+					// AC=1,6,3;AN=20;GTC=4,0,0,2,1,1,0,0,1,1
 
 					v.setName("chr" + record.getChrom() + ":g." + record.getPos() + record.getRef() + ">" + alt.get(i));
 					v.setName(v.getName().replace("|", "_"));
@@ -171,7 +187,7 @@ public class VcfToGoNLVariantConverter
 					v.setChr_Name(chromName);
 
 					// check if chrom exists, otherwise add
-					System.out.println(">>>>" + chromosomes);
+					// System.out.println(">>>>" + chromosomes);
 					if (!chromosomes.contains(chromName)) chromosomes.add(chromName);
 
 					// pos
@@ -187,7 +203,8 @@ public class VcfToGoNLVariantConverter
 					v.setDescription("" + record.getId());
 
 					// put alt allele counts in description
-					System.out.println(vcf.getInfoFields());
+					// System.out.println(vcf.getInfoFields());
+
 					for (int j = 0; j != vcf.getInfoFields().size(); j++)
 					{
 						System.out.println(vcf.getInfoFields().get(j));
@@ -197,57 +214,85 @@ public class VcfToGoNLVariantConverter
 							List<String> var3 = vcf.getInfoFields();
 							String key = var3.get(j);
 							List<String> info = record.getInfo(key);
-							if (info == null | info.isEmpty()) observedValue.setValue(info.get(0));
+							if (info == null | info.isEmpty())
+							{
+								System.out.println("PLEASE remove this if empty" + info.get(0));
+								observedValue.setValue(info.get(0));
+								t.setName(info.get(0));
+								observedValue.setTarget(t.getId());
+							}
 
 							else
 								logger.warn("unknown key: " + key);
 
 						}
 
-//##INFO=<ID=GTC,Number=G,Type=Integer,Description="GenoType Counts. For each ALT allele in the same order as listed = 0/0,0/1,1/1,0/2,1/2,2/2,0/3,1/3,2/3,3/3,etc. 
-//Phasing is ignored; hence 1/0, 0|1 and 1|0 are all counted as 0/1. When one or more alleles is not called for a genotype in a specific sample (./., ./0, ./1, ./2, etc.),
-//that sample's genotype is completely discarded for calculating GTC.">
+						// ##INFO=<ID=GTC,Number=G,Type=Integer,Description="GenoType
+						// Counts. For each ALT allele in the same order as
+						// listed = 0/0,0/1,1/1,0/2,1/2,2/2,0/3,1/3,2/3,3/3,etc.
+						// Phasing is ignored; hence 1/0, 0|1 and 1|0 are all
+						// counted as 0/1. When one or more alleles is not
+						// called for a genotype in a specific sample (./., ./0,
+						// ./1, ./2, etc.),
+						// that sample's genotype is completely discarded for
+						// calculating GTC.">
 
-						
 						// create 3 features : AC, AN, GTC
 						ObservableFeature acf = new ObservableFeature();
 						acf.setName("AC");
-						features.add(acf);
+						if (!features.contains(acf)) features.add(acf);
 
 						ObservableFeature anf = new ObservableFeature();
-						acf.setName("AN");
-						features.add(anf);
+						anf.setName("AN");
+						if (!features.contains(anf)) features.add(anf);
 
 						ObservableFeature gtcf = new ObservableFeature();
-						acf.setName("GTC");
-						features.add(gtcf);
+						gtcf.setName("GTC");
+						if (!features.contains(gtcf)) features.add(gtcf);
+
+						ObservationTarget acot = new ObservationTarget();
+						ObservationTarget anot = new ObservationTarget();
+						ObservationTarget gtcot = new ObservationTarget();
+
+						acot.setName("AC");
+						anot.setName("AN");
+						gtcot.setName("GTC");
 
 						ObservedValue ac = new ObservedValue();
 						ac.setFeature(acf);
 						ac.setFeature_Name("AC");
+						// ac.setTarget(acot.getId());
+						ac.setTarget_Name("AC");
 						ac.setValue(record.getInfo("AC").get(i));
 
 						ObservedValue an = new ObservedValue();
-						ac.setFeature(anf);
+						an.setFeature(anf);
 						an.setFeature_Name("AN");
+						// an.setTarget(anot.getId());
+						an.setTarget_Name("AN");
 						an.setValue(record.getInfo("AN").get(i));
 
 						ObservedValue gtc = new ObservedValue();
-						ac.setFeature(gtcf);
+						gtc.setFeature(gtcf);
 						gtc.setFeature_Name("GTC");
+						// gtc.setTarget(gtcot.getId());
+						gtc.setTarget_Name("GTC");
 						// gtc.setValue(record.getInfo("GTC").get(i));
 
 						observedValuesList.add(ac);
 						observedValuesList.add(an);
 						observedValuesList.add(gtc);
 
-						observedValue.setValue(record.getInfo("AC").get(i));
-						observedValue.setValue(record.getInfo("AN").get(i));
+						if (!targets.contains(acot)) targets.add(acot);
+						if (!targets.contains(anot)) targets.add(anot);
+						if (!targets.contains(gtcot)) targets.add(gtcot);
+						if (!targets.contains(t)) targets.add(t);
+
 						// GTC is not only one number
 						String tmp = "";
 						for (int k = 0; k != record.getInfo("GTC").size(); k++)
 							tmp = tmp + record.getInfo("GTC").get(k) + " , ";
-						observedValue.setValue(tmp);
+						gtc.setValue(tmp);
 
 					}
 
@@ -255,21 +300,29 @@ public class VcfToGoNLVariantConverter
 					values.add(observedValue);
 
 					observedValue.setRelation_Name("Allele count");
+					observedValue.setTarget_Name("Allele count");
 					observedValue.setFeature_Name(v.getName());
 
 				}
-				List<ObservedValue> observedValuesList = new ArrayList<ObservedValue>();
+
+				System.out.println("observedValuesList" + observedValuesList);
 
 				for (ObservedValue ov : observedValuesList)
 				{
+					// System.out.println("values + ov" + values + ov);
 					values.add(ov);
 				}
+				System.out.println("variantsSIZE: " + variants.size());
+				System.out.println("BATCH_SIZE: " + BATCH_SIZE);
 
 				if (variants.size() >= BATCH_SIZE)
 				{
+					System.out.println("variantHeader: " + variantHeaders);
 					writeBatch(variants, fileVariants, variantHeaders);
 					variants.clear();
 					writeBatch(values, fileObservedValues, ovHeaders);
+					values.clear();
+					writeBatch(targets, fileObservedTargets, otHeaders);
 					values.clear();
 
 					count.set(0, count.get(0) + BATCH_SIZE);
@@ -282,6 +335,7 @@ public class VcfToGoNLVariantConverter
 		// write remaining data for last batch.
 		writeBatch(variants, fileVariants, variantHeaders);
 		writeBatch(values, fileObservedValues, ovHeaders);
+		writeBatch(targets, fileObservedTargets, otHeaders);
 
 		// write chromsomes
 		List<Chromosome> chrList = new ArrayList<Chromosome>();
