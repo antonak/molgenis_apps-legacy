@@ -27,8 +27,8 @@
 			<field name="genomeBuild" type="xref" xref_entity="GenomeBuild" />
 			<field name="orderNr" type="int"
 				description="Sorting order of chromosomes within the species." />
-			<field name="isAutosomal" type="bool" nillable="true"
-				description="If true there is an equal number of chromosomes in male/females. If false, it's a sex chromosome." />
+			<field name="isAutosomal" type="enum" enum_options="[yes,no,unknown]" description="Is 'yes' when number of chromosomes is equal in male and female individuals, i.e., if not a sex chromosome."/>
+			
 			<field name="bpLength" type="int" nillable="true"
 				description="Length of the chromosome in the genome build." />
 			<unique fields="genomeBuild,name" description="Chromosome belongs to species. E.g. hg19:chr1" />
